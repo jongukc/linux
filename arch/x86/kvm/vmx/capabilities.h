@@ -18,6 +18,11 @@ extern bool __read_mostly enable_pml;
 extern bool __read_mostly enable_ipiv;
 extern int __read_mostly pt_mode;
 
+/* VT-rp */
+extern bool __read_mostly enable_hlat;
+extern bool __read_mostly enable_pw;
+extern bool __read_mostly enable_gpv;
+
 #define PT_MODE_SYSTEM		0
 #define PT_MODE_HOST_GUEST	1
 
@@ -69,6 +74,7 @@ extern struct vmcs_config vmcs_config __ro_after_init;
 struct vmx_capability {
 	u32 ept;
 	u32 vpid;
+	u32 max_plr_prefix_size;
 };
 extern struct vmx_capability vmx_capability __ro_after_init;
 
@@ -397,6 +403,27 @@ static inline bool cpu_has_notify_vmexit(void)
 {
 	return vmcs_config.cpu_based_2nd_exec_ctrl &
 		SECONDARY_EXEC_NOTIFY_VM_EXITING;
+}
+
+/* VT-rp */
+static inline bool cpu_has_vmx_hlat(void)
+{
+	return vmcs_config.cpu_based_3rd_exec_ctrl &
+		TERTIARY_EXEC_ENABLE_HLAT;
+}
+
+/* VT-rp */
+static inline bool cpu_has_vmx_pw(void)
+{
+	return vmcs_config.cpu_based_3rd_exec_ctrl &
+		TERTIARY_EXEC_EPT_PW;
+}
+
+/* VT-rp */
+static inline bool cpu_has_vmx_gpv(void)
+{
+	return vmcs_config.cpu_based_3rd_exec_ctrl &
+		TERTIARY_EXEC_GPV;
 }
 
 #endif /* __KVM_X86_VMX_CAPS_H */
