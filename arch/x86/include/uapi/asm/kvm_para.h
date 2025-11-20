@@ -37,6 +37,13 @@
 #define KVM_FEATURE_HC_MAP_GPA_RANGE	16
 #define KVM_FEATURE_MIGRATION_CONTROL	17
 
+/* VT-rp */
+#define KVM_FEATURE_HLAT	18
+#define KVM_FEATURE_PW	19
+#define KVM_FEATURE_GPV	20
+
+#define KVM_FEATURE_HONMOON	21
+
 #define KVM_HINTS_REALTIME      0
 
 /* The last 8 bits are used to indicate how to interpret the flags field
