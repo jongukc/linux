@@ -121,6 +121,10 @@ void vmx_cancel_hv_timer(struct kvm_vcpu *vcpu);
 #endif
 void vmx_setup_mce(struct kvm_vcpu *vcpu);
 
+long vmx_handle_vmcall(struct kvm_vcpu *vcpu, unsigned long nr,
+					   unsigned long a0, unsigned long a1,
+					   unsigned long a2, unsigned long a3, bool *handled);
+
 #ifdef CONFIG_KVM_INTEL_TDX
 void tdx_disable_virtualization_cpu(void);
 int tdx_vm_init(struct kvm *kvm);

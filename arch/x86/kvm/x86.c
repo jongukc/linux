@@ -10179,6 +10179,14 @@ int ____kvm_emulate_hypercall(struct kvm_vcpu *vcpu, int cpl,
 		return 0;
 	}
 	default:
+		if (kvm_x86_ops.vendor_hypercall) {
+			bool handled = 0;
+			long ret_vendor = kvm_x86_call(vendor_hypercall)(vcpu, nr, a0, a1, a2, a3, &handled);
+			if (handled) {
+				ret = ret_vendor;
+				goto out;
+			}
+		}
 		ret = -KVM_ENOSYS;
 		break;
 	}

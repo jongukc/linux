@@ -6083,6 +6083,29 @@ static int handle_notify(struct kvm_vcpu *vcpu)
 	return 1;
 }
 
+long vmx_handle_vmcall(struct kvm_vcpu *vcpu, unsigned long nr,
+					   unsigned long a0, unsigned long a1,
+					   unsigned long a2, unsigned long a3, bool *handled)
+{
+	long ret;
+	*handled = false;
+
+	struct kvm_arch *kvm_arch = &vcpu->kvm->arch;
+	(void)kvm_arch;
+	ret = -KVM_ENOSYS;
+
+	switch (nr) {
+	case KVM_HC_HONMOON_LOCK:
+		ret = 0; // TODO
+		*handled = true;
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
 /*
  * The exit handlers return 1 if the exit was handled fully and guest execution
  * may resume.  Otherwise they set the kvm_run parameter to indicate what needs
@@ -6440,6 +6463,11 @@ void dump_vmcs(struct kvm_vcpu *vcpu)
 		       ve_info->guest_linear_address,
 		       ve_info->guest_physical_address, ve_info->eptp_index);
 	}
+
+	if (tertiary_exec_control & TERTIARY_EXEC_ENABLE_HLAT)
+		pr_err("HLAT pointer = 0x%016llx PLR prefix size = 0x%02x\n",
+		       vmcs_read64(HLAT_POINTER),
+		       vmcs_read16(HLAT_PLR_PREFIX_SIZE));
 }
 
 /*

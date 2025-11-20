@@ -1918,6 +1918,10 @@ struct kvm_x86_ops {
 	int (*gmem_prepare)(struct kvm *kvm, kvm_pfn_t pfn, gfn_t gfn, int max_order);
 	void (*gmem_invalidate)(kvm_pfn_t start, kvm_pfn_t end);
 	int (*private_max_mapping_level)(struct kvm *kvm, kvm_pfn_t pfn);
+	long (*vendor_hypercall)(struct kvm_vcpu *vcpu, unsigned long nr,
+						 	 unsigned long a0, unsigned long a1,
+							 unsigned long a2, unsigned long a3,
+							 bool *handled);
 };
 
 struct kvm_x86_nested_ops {
