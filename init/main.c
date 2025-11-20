@@ -116,6 +116,10 @@
 
 #include <kunit/test.h>
 
+#ifdef CONFIG_HONMOON_GUEST
+#include <asm/honmoon.h>
+#endif
+
 static int kernel_init(void *);
 
 /*
@@ -126,7 +130,7 @@ static int kernel_init(void *);
  * flag is set.
  */
 bool early_boot_irqs_disabled __read_mostly;
-
+#
 enum system_states system_state __read_mostly;
 EXPORT_SYMBOL(system_state);
 
@@ -1482,6 +1486,10 @@ static int __ref kernel_init(void *unused)
 	exit_boot_config();
 	free_initmem();
 	mark_readonly();
+
+#ifdef CONFIG_HONMOON_GUEST
+	honmoon_lock();
+#endif
 
 	/*
 	 * Kernel mappings are now finalized - update the userspace page-table

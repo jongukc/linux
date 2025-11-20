@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
+#include <linux/export.h>
 #include <linux/mm_types.h>
 #include <linux/maple_tree.h>
 #include <linux/rwsem.h>
@@ -47,6 +48,7 @@ struct mm_struct init_mm = {
 	.cpu_bitmap	= CPU_BITS_NONE,
 	INIT_MM_CONTEXT(init_mm)
 };
+EXPORT_SYMBOL_GPL(init_mm);
 
 void setup_initial_init_mm(void *start_code, void *end_code,
 			   void *end_data, void *brk)
