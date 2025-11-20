@@ -4,7 +4,7 @@
 #include <linux/init.h>
 #include <linux/kvm_para.h>
 
-#define KVM_HC_HOONMOON_LOCK 0x6000
+#define KVM_HC_HOONMOON_LOCK 0x100
 
 void honmoon_lock(void);
 
