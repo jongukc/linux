@@ -837,11 +837,11 @@ config KVM_GUEST
 	  timing infrastructure such as time of day, and system time
 
 config HONMOON_GUEST
-	bool "Hoonmoon guest support"
+	bool "Honmoon guest support"
 	depends on X86_64
 	depends on KVM_GUEST
 	help
-	  Enable guest-side interfaces for the Hoonmoon hypervisor.
+	  Enable guest-side interfaces for the Honmoon hypervisor.
 
 config ARCH_CPUIDLE_HALTPOLL
 	def_bool n
