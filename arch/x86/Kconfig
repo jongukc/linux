@@ -836,6 +836,13 @@ config KVM_GUEST
 	  underlying device model, the host provides the guest with
 	  timing infrastructure such as time of day, and system time
 
+config HONMOON_GUEST
+	bool "Hoonmoon guest support"
+	depends on X86_64
+	depends on KVM_GUEST
+	help
+	  Enable guest-side interfaces for the Hoonmoon hypervisor.
+
 config ARCH_CPUIDLE_HALTPOLL
 	def_bool n
 	prompt "Disable host haltpoll when loading haltpoll driver"
