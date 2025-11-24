@@ -1,5 +1,3 @@
-#include "asm/pgtable_64_types.h"
-#include "linux/types.h"
 #define pr_fmt(fmt) "honmoon-guest: " fmt
 
 #include <linux/init.h>
