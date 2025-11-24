@@ -25,6 +25,7 @@ enum x86_pf_error_code {
 	X86_PF_INSTR	=		BIT(4),
 	X86_PF_PK	=		BIT(5),
 	X86_PF_SHSTK	=		BIT(6),
+	X86_PF_HLAT	=		BIT(7),
 	X86_PF_SGX	=		BIT(15),
 	X86_PF_RMP	=		BIT(31),
 };

@@ -6,9 +6,10 @@
 
 #define KVM_HC_HOONMOON_LOCK 0x100
 
-void honmoon_lock(void);
+bool is_honmoon_enabled(void);
+void honmoon_activate(void);
 
-static inline long hypercall_honmoon_lock(unsigned long hlat_root_gpa)
+static inline long hypercall_set_hlatp(unsigned long hlat_root_gpa)
 {
 	return kvm_hypercall1(KVM_HC_HOONMOON_LOCK, hlat_root_gpa);
 }

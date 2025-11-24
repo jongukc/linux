@@ -1488,7 +1488,8 @@ static int __ref kernel_init(void *unused)
 	mark_readonly();
 
 #ifdef CONFIG_HONMOON_GUEST
-	honmoon_lock();
+	if (is_honmoon_enabled())
+		honmoon_activate();
 #endif
 
 	/*
