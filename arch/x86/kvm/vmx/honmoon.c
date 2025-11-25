@@ -201,7 +201,7 @@ long vmx_handle_honmoon_activate(struct kvm_vcpu *vcpu,
 	 */
 	// kvm_release_page_clean(page);
 
-	kvm_make_request(KVM_REQ_TLB_FLUSH, vcpu);
+	kvm_flush_remote_tlbs(vcpu->kvm);
 
 	vmx->honmoon_activated = true;
 	mutex_lock(&vcpu->kvm->lock);
