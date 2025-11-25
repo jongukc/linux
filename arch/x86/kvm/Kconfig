@@ -227,4 +227,11 @@ config KVM_MAX_NR_VCPUS
 	  the memory footprint of each KVM guest, regardless of how many vCPUs are
 	  created for a given VM.
 
+config HONMOON_HOST
+	bool "Honmoon host support"
+	depends on X86_64
+	depends on KVM
+	help
+	  Enable host-side interfaces for the Honmoon guests.
+
 endif # VIRTUALIZATION

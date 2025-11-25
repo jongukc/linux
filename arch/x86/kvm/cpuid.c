@@ -1621,7 +1621,9 @@ static inline int __do_cpuid_func(struct kvm_cpuid_array *array, u32 function)
 			     (1 << KVM_FEATURE_PV_SCHED_YIELD) |
 			     (1 << KVM_FEATURE_ASYNC_PF_INT) |
 			     (1 << KVM_FEATURE_HLAT) |
-			     (1 << KVM_FEATURE_GPV);
+				 (1 << KVM_FEATURE_PW) |
+			     (1 << KVM_FEATURE_GPV) |
+				 (1 << KVM_FEATURE_HONMOON);
 
 		if (sched_info_on())
 			entry->eax |= (1 << KVM_FEATURE_STEAL_TIME);

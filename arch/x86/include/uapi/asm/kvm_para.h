@@ -39,7 +39,10 @@
 
 /* VT-rp */
 #define KVM_FEATURE_HLAT	18
-#define KVM_FEATURE_GPV	19
+#define KVM_FEATURE_PW	19
+#define KVM_FEATURE_GPV	20
+
+#define KVM_FEATURE_HONMOON	21
 
 #define KVM_HINTS_REALTIME      0
 
@@ -152,5 +155,7 @@ struct kvm_vcpu_pv_apf_data {
 #define KVM_PV_EOI_MASK (0x1 << KVM_PV_EOI_BIT)
 #define KVM_PV_EOI_ENABLED KVM_PV_EOI_MASK
 #define KVM_PV_EOI_DISABLED 0x0
+
+#define KVM_HC_HONMOON_ACTIVATE 0x100
 
 #endif /* _UAPI_ASM_X86_KVM_PARA_H */

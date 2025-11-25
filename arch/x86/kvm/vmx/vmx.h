@@ -305,6 +305,9 @@ struct vcpu_vmx {
 
 	/* ve_info must be page aligned. */
 	struct vmx_ve_information *ve_info;
+
+	/* Honmoon */
+	bool honmoon_activated;
 };
 
 struct kvm_vmx {
@@ -315,6 +318,10 @@ struct kvm_vmx {
 	gpa_t ept_identity_map_addr;
 	/* Posted Interrupt Descriptor (PID) table for IPI virtualization */
 	u64 *pid_table;
+
+	/* Honmoon */
+	bool honmoon_activated_global;
+	unsigned long hlat_root_gpa;
 };
 
 static __always_inline struct vcpu_vt *to_vt(struct kvm_vcpu *vcpu)
@@ -402,6 +409,8 @@ u64 vmx_get_l2_tsc_offset(struct kvm_vcpu *vcpu);
 u64 vmx_get_l2_tsc_multiplier(struct kvm_vcpu *vcpu);
 
 gva_t vmx_get_untagged_addr(struct kvm_vcpu *vcpu, gva_t gva, unsigned int flags);
+
+long vmx_handle_honmoon_activate(struct kvm_vcpu *vcpu, unsigned long hlat_root_gpa);
 
 static inline void vmx_set_intercept_for_msr(struct kvm_vcpu *vcpu, u32 msr,
 					     int type, bool value)
@@ -731,5 +740,8 @@ static inline void vmx_segment_cache_clear(struct vcpu_vmx *vmx)
 
 int vmx_init(void);
 void vmx_exit(void);
+
+u64 *honmoon_get_ept_leaf(struct kvm_vcpu *vcpu, gpa_t gpa, bool split);
+bool vmx_is_honmoon_violation(struct kvm_vcpu *vcpu, gpa_t gpa);
 
 #endif /* __KVM_X86_VMX_H */

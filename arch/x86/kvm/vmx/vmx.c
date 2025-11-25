@@ -136,6 +136,16 @@ module_param(error_on_inconsistent_vmcs_config, bool, 0444);
 static bool __read_mostly dump_invalid_vmcs = 0;
 module_param(dump_invalid_vmcs, bool, 0644);
 
+/* VT-rp */
+bool __read_mostly enable_hlat = 1;
+module_param_named(hlat, enable_hlat, bool, 0444);
+
+bool __read_mostly enable_pw = 1;
+module_param_named(pw, enable_pw, bool, 0444);
+
+bool __read_mostly enable_gpv = 1;
+module_param_named(gpv, enable_gpv, bool, 0444);
+
 #define MSR_BITMAP_MODE_X2APIC		1
 #define MSR_BITMAP_MODE_X2APIC_APICV	2
 
@@ -2673,6 +2683,9 @@ static int setup_vmcs_config(struct vmcs_config *vmcs_conf,
 	rdmsr_safe(MSR_IA32_VMX_EPT_VPID_CAP,
 		&vmx_cap->ept, &vmx_cap->vpid);
 
+	vmx_cap->max_plr_prefix_size = (vmx_cap->vpid >> 16) & 0x3f;
+	vmx_cap->vpid &= ~0x003f0000;
+
 	if (!(_cpu_based_2nd_exec_control & SECONDARY_EXEC_ENABLE_EPT) &&
 	    vmx_cap->ept) {
 		pr_warn_once("EPT CAP should not exist if not support "
@@ -4503,6 +4516,15 @@ static u64 vmx_tertiary_exec_control(struct vcpu_vmx *vmx)
 	if (!enable_ipiv || !kvm_vcpu_apicv_active(&vmx->vcpu))
 		exec_control &= ~TERTIARY_EXEC_IPI_VIRT;
 
+	if (!enable_hlat || !vmx->honmoon_activated)
+		exec_control &= ~TERTIARY_EXEC_ENABLE_HLAT;
+
+	if (!enable_pw)
+		exec_control &= ~TERTIARY_EXEC_EPT_PW;
+
+	if (!enable_gpv)
+		exec_control &= ~TERTIARY_EXEC_GPV;
+
 	return exec_control;
 }
 
@@ -4715,8 +4737,20 @@ static void init_vmcs(struct vcpu_vmx *vmx)
 				     __pa(vmx->ve_info));
 	}
 
-	if (cpu_has_tertiary_exec_ctrls())
+	if (cpu_has_tertiary_exec_ctrls()) {
 		tertiary_exec_controls_set(vmx, vmx_tertiary_exec_control(vmx));
+		/*
+		 * Ensure HLAT isn't enabled by default in the running VMCS.
+		 * vmx_tertiary_exec_control() already clears the ENABLE_HLAT
+		 * bit when vmx->honmoon_activated == false, but be explicit:
+		 * the honmoon lock handler expects the HW tertiary control
+		 * bit to be clear until the guest issues the lock hypercall
+		 * and host-side protection is completed.
+		 * Shortly, the HLAT should be enabled only after the protection
+		 * is fully in place.
+		 */
+		tertiary_exec_controls_clearbit(vmx, TERTIARY_EXEC_ENABLE_HLAT);
+	}
 
 	if (enable_apicv && lapic_in_kernel(&vmx->vcpu)) {
 		vmcs_write64(EOI_EXIT_BITMAP0, 0);
@@ -5781,6 +5815,11 @@ static int handle_ept_violation(struct kvm_vcpu *vcpu)
 	if (unlikely(allow_smaller_maxphyaddr && !kvm_vcpu_is_legal_gpa(vcpu, gpa)))
 		return kvm_emulate_instruction(vcpu, 0);
 
+	/* TODO: Check for HLAT protection violation */
+	if (unlikely(vmx_is_honmoon_violation(vcpu, gpa))) {
+
+	}
+
 	return __vmx_handle_ept_violation(vcpu, gpa, exit_qualification);
 }
 
@@ -6095,8 +6134,8 @@ long vmx_handle_vmcall(struct kvm_vcpu *vcpu, unsigned long nr,
 	ret = -KVM_ENOSYS;
 
 	switch (nr) {
-	case KVM_HC_HONMOON_LOCK:
-		ret = 0; // TODO
+	case KVM_HC_HONMOON_ACTIVATE:
+		ret = vmx_handle_honmoon_activate(vcpu, a0);
 		*handled = true;
 		break;
 	default:
@@ -7359,6 +7398,7 @@ fastpath_t vmx_vcpu_run(struct kvm_vcpu *vcpu, u64 run_flags)
 {
 	bool force_immediate_exit = run_flags & KVM_RUN_FORCE_IMMEDIATE_EXIT;
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
+	struct kvm_vmx *kvm_vmx = to_kvm_vmx(vcpu->kvm);
 	unsigned long cr3, cr4;
 
 	/* Record the guest's net vcpu time for enforced NMI injections. */
@@ -7510,6 +7550,19 @@ fastpath_t vmx_vcpu_run(struct kvm_vcpu *vcpu, u64 run_flags)
 	vmx_recover_nmi_blocking(vmx);
 	vmx_complete_interrupts(vmx);
 
+	/* Check Honmoon state */
+	if (unlikely(READ_ONCE(kvm_vmx->honmoon_activated_global) && !vmx->honmoon_activated)) {
+		tertiary_exec_controls_setbit(vmx, TERTIARY_EXEC_ENABLE_HLAT);
+		tertiary_exec_controls_setbit(vmx, TERTIARY_EXEC_EPT_PW);
+		tertiary_exec_controls_setbit(vmx, TERTIARY_EXEC_GPV);
+
+		vmcs_write64(HLAT_POINTER, READ_ONCE(kvm_vmx->hlat_root_gpa));
+		vmcs_write16(HLAT_PLR_PREFIX_SIZE, 1);
+
+		vmx->honmoon_activated = true;
+		pr_info("HLAT enabled for VCPU %d\n", vcpu->vcpu_id);
+	}
+
 	return vmx_exit_handlers_fastpath(vcpu, force_immediate_exit);
 }
 
@@ -7533,6 +7586,8 @@ int vmx_vcpu_create(struct kvm_vcpu *vcpu)
 
 	BUILD_BUG_ON(offsetof(struct vcpu_vmx, vcpu) != 0);
 	vmx = to_vmx(vcpu);
+
+	vmx->honmoon_activated = false;
 
 	INIT_LIST_HEAD(&vmx->vt.pi_wakeup_list);
 
