@@ -162,7 +162,7 @@ void honmoon_activate(void)
 
 		/* Map Direct Map Alias (R, NX) */
 		hlat_map_page(hlat_root, (unsigned long)__va(pa), pa, level,
-			      HLAT_PRESENT | HLAT_USER | HLAT_XD);
+			      HLAT_PRESENT | HLAT_XD);
 
 		if (level == PG_LEVEL_2M)
 			step = PMD_SIZE;
