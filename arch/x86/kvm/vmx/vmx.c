@@ -7552,6 +7552,8 @@ fastpath_t vmx_vcpu_run(struct kvm_vcpu *vcpu, u64 run_flags)
 
 	/* Check Honmoon state */
 	if (unlikely(READ_ONCE(kvm_vmx->honmoon_activated_global) && !vmx->honmoon_activated)) {
+		kvm_make_request(KVM_REQ_TLB_FLUSH, vcpu);
+
 		tertiary_exec_controls_setbit(vmx, TERTIARY_EXEC_ENABLE_HLAT);
 		tertiary_exec_controls_setbit(vmx, TERTIARY_EXEC_EPT_PW);
 		tertiary_exec_controls_setbit(vmx, TERTIARY_EXEC_GPV);
