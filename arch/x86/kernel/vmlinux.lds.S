@@ -165,6 +165,23 @@ SECTIONS
 		HEAD_TEXT
 	} :text = 0xcccccccc
 
+	. = ALIGN(PMD_SIZE);
+	.text.honmoon_test_alias : AT(ADDR(.text.honmoon_test_alias) - LOAD_OFFSET) {
+		*(.text.honmoon_test_alias)
+	} :text = 0xcccccccc
+
+	. = ALIGN(PMD_SIZE);
+
+	.text.honmoon_test_remap_1 : AT(ADDR(.text.honmoon_test_remap_1) - LOAD_OFFSET) {
+		*(.text.honmoon_test_remap_1)
+	} :text = 0xcccccccc
+	. = ALIGN(PAGE_SIZE);
+
+	.text.honmoon_test_remap_2 : AT(ADDR(.text.honmoon_test_remap_2) - LOAD_OFFSET) {
+		*(.text.honmoon_test_remap_2)
+	} :text = 0xcccccccc
+	. = ALIGN(PAGE_SIZE);
+
 	/* End of text section, which should occupy whole number of pages */
 	_etext = .;
 	. = ALIGN(PAGE_SIZE);

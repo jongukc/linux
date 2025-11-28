@@ -8,6 +8,9 @@
 
 bool is_honmoon_enabled(void);
 void honmoon_activate(void);
+int honmoon_test_remap_1(void);
+int honmoon_test_remap_2(void);
+int honmoon_test_alias(void);
 
 static inline long hypercall_set_hlatp(unsigned long hlat_root_gpa)
 {

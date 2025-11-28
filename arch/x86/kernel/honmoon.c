@@ -182,3 +182,22 @@ void honmoon_activate(void)
 		pr_info("HLAT successfully enabled.\n");
 	}
 }
+
+/* Functions for testing page remapping & aliasing attacks */
+int __attribute__((section(".text.honmoon_test_remap_1"), aligned(PAGE_SIZE))) honmoon_test_remap_1(void)
+{
+	return 0;
+}
+EXPORT_SYMBOL_GPL(honmoon_test_remap_1);
+
+int __attribute__((section(".text.honmoon_test_remap_2"), aligned(PAGE_SIZE))) honmoon_test_remap_2(void)
+{
+	return 1;
+}
+EXPORT_SYMBOL_GPL(honmoon_test_remap_2);
+
+int __attribute__((section(".text.honmoon_test_alias"), aligned(PAGE_SIZE))) honmoon_test_alias(void)
+{
+	return 2;
+}
+EXPORT_SYMBOL_GPL(honmoon_test_alias);
