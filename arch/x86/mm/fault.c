@@ -550,7 +550,7 @@ show_fault_oops(struct pt_regs *regs, unsigned long error_code, unsigned long ad
 		 (error_code & X86_PF_RSVD)  ? "reserved bit violation" :
 		 (error_code & X86_PF_PK)    ? "protection keys violation" :
 		 (error_code & X86_PF_RMP)   ? "RMP violation" :
-		 (error_code & X86_PF_HLAT)  ? "HLAT fault" :
+		 (error_code & X86_PF_GPV)  ? "GPV violation" :
 					       "permissions violation");
 
 	if (!(error_code & X86_PF_USER) && user_mode(regs)) {
@@ -1220,6 +1220,10 @@ void do_user_addr_fault(struct pt_regs *regs,
 	tsk = current;
 	mm = tsk->mm;
 
+	if (error_code & X86_PF_GPV) {
+		pr_err("GPV violation detected\n");
+	}
+
 	if (unlikely((error_code & (X86_PF_USER | X86_PF_INSTR)) == X86_PF_INSTR)) {
 		/*
 		 * Whoops, this is kernel mode code trying to execute from
@@ -1465,9 +1469,6 @@ static __always_inline void
 handle_page_fault(struct pt_regs *regs, unsigned long error_code,
 			      unsigned long address)
 {
-	if (unlikely(error_code & X86_PF_HLAT))
-		pr_info("VTRP page fault: address=%lx error_code=%lx\n", address, error_code);
-
 	trace_page_fault_entries(regs, error_code, address);
 
 	if (unlikely(kmmio_fault(regs, address)))
