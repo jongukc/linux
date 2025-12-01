@@ -89,6 +89,8 @@ static_assert(!(SPTE_TDP_AD_MASK & SHADOW_ACC_TRACK_SAVED_MASK));
  *
  * VT-rp uses bits 57 (VPW) and 58 (PW). Move software bits to 59/60.
  */
+#define EPT_SPTE_VPW			BIT_ULL(57)
+#define EPT_SPTE_PW			BIT_ULL(58)
 #define EPT_SPTE_HOST_WRITABLE		BIT_ULL(59)
 #define EPT_SPTE_MMU_WRITABLE		BIT_ULL(60)
 

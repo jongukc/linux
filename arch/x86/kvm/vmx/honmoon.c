@@ -5,10 +5,8 @@
 #include <linux/highmem.h>
 #include <asm/vmx.h>
 #include <asm/page.h>
+#include <mmu/spte.h>
 #include "vmx.h"
-
-#define EPT_VPW_BIT BIT_ULL(57)
-#define EPT_PW_BIT BIT_ULL(58)
 
 #define HLAT_RESTART_BIT BIT_ULL(11)
 #define HLAT_PRESENT_BIT BIT_ULL(0)
@@ -69,7 +67,10 @@ u64 *honmoon_get_ept_leaf(struct kvm_vcpu *vcpu, gpa_t gpa, bool split)
 
 			for (i = 0; i < 512; i++) {
 				u64 child_spte = spte;
-				child_spte &= ~(1ULL << 7);
+
+				if (level == 2)
+					child_spte &= ~(1ULL << 7);
+
 				child_spte &= ~SPTE_PHYS_MASK;
 				child_spte |= ((huge_pfn + i * pages_per_child)
 					       << PAGE_SHIFT) &
@@ -104,7 +105,7 @@ static void honmoon_update_ept(struct kvm_vcpu *vcpu, gpa_t gpa, u64 set_bits,
 		u64 spte = *sptep;
 		spte &= ~clear_bits;
 		spte |= set_bits;
-		*sptep = spte;
+		WRITE_ONCE(*sptep, spte);
 	} else {
 		pr_err("Failed to find EPT entry for GPA %llx\n", gpa);
 	}
@@ -116,8 +117,6 @@ static void honmoon_protect_hlat(struct kvm_vcpu *vcpu, gpa_t table_gpa,
 {
 	int i;
 	struct kvm *kvm = vcpu->kvm;
-
-	honmoon_update_ept(vcpu, table_gpa, EPT_PW_BIT, VMX_EPT_WRITABLE_MASK);
 
 	for (i = 0; i < 512; i++) {
 		u64 entry;
@@ -137,15 +136,33 @@ static void honmoon_protect_hlat(struct kvm_vcpu *vcpu, gpa_t table_gpa,
 		gpa_t child_gpa = entry & SPTE_PHYS_MASK;
 
 		if (level > 1 && (entry & (1ULL << 7))) {
-			honmoon_update_ept(vcpu, child_gpa, EPT_VPW_BIT,
-					   VMX_EPT_WRITABLE_MASK);
+			unsigned long pages = 1UL << ((level - 1) * 9);
+			unsigned long k;
+
+			for (k = 0; k < pages; k++) {
+				gpa_t target = child_gpa + k * PAGE_SIZE;
+
+				kvm_mmu_page_fault(vcpu, target,
+						   PFERR_WRITE_MASK, NULL, 0);
+			}
+
+			for (k = 0; k < pages; k++) {
+				gpa_t target = child_gpa + k * PAGE_SIZE;
+
+				honmoon_update_ept(vcpu, target, EPT_SPTE_VPW,
+						   VMX_EPT_WRITABLE_MASK);
+			}
 			continue;
 		}
 
+		kvm_mmu_page_fault(vcpu, child_gpa, PFERR_WRITE_MASK, NULL, 0);
+
 		if (level > 1) {
 			honmoon_protect_hlat(vcpu, child_gpa, level - 1);
+			honmoon_update_ept(vcpu, table_gpa, EPT_SPTE_PW,
+					   VMX_EPT_WRITABLE_MASK);
 		} else {
-			honmoon_update_ept(vcpu, child_gpa, EPT_VPW_BIT,
+			honmoon_update_ept(vcpu, child_gpa, EPT_SPTE_VPW,
 					   VMX_EPT_WRITABLE_MASK);
 		}
 	}
@@ -221,22 +238,4 @@ long vmx_handle_honmoon_activate(struct kvm_vcpu *vcpu,
 	pr_info("HLAT enabled for VCPU %d\n", vcpu->vcpu_id);
 
 	return 0;
-}
-
-bool vmx_is_honmoon_violation(struct kvm_vcpu *vcpu, gpa_t gpa)
-{
-	u64 *sptep;
-	u64 spte;
-	bool is_honmoon = false;
-
-	read_lock(&vcpu->kvm->mmu_lock);
-	sptep = honmoon_get_ept_leaf(vcpu, gpa, false);
-	if (sptep) {
-		spte = *sptep;
-		if (spte & EPT_VPW_BIT)
-			is_honmoon = true;
-	}
-	read_unlock(&vcpu->kvm->mmu_lock);
-
-	return is_honmoon;
 }

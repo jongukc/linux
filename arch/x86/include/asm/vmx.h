@@ -608,6 +608,7 @@ enum vm_entry_failure_code {
 					 EPT_VIOLATION_PROT_EXEC)
 #define EPT_VIOLATION_GVA_IS_VALID	BIT(7)
 #define EPT_VIOLATION_GVA_TRANSLATED	BIT(8)
+#define EPT_VIOLATION_GPV_VIOLATION	BIT(15)
 
 #define EPT_VIOLATION_RWX_TO_PROT(__epte) (((__epte) & VMX_EPT_RWX_MASK) << 3)
 

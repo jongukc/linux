@@ -5815,9 +5815,22 @@ static int handle_ept_violation(struct kvm_vcpu *vcpu)
 	if (unlikely(allow_smaller_maxphyaddr && !kvm_vcpu_is_legal_gpa(vcpu, gpa)))
 		return kvm_emulate_instruction(vcpu, 0);
 
-	/* TODO: Check for HLAT protection violation */
-	if (unlikely(vmx_is_honmoon_violation(vcpu, gpa))) {
+	/* Check for HLAT protection violation */
+	if (exit_qualification & EPT_VIOLATION_GPV_VIOLATION) {
+		pr_err("GPV violation for GLA: %lx, GPA: %llx\n",
+				vmcs_readl(GUEST_LINEAR_ADDRESS), gpa);
+		
+		struct x86_exception fault = {
+			.vector = PF_VECTOR,
+			.error_code_valid = true,
+			.error_code = PFERR_GPV_MASK | PFERR_PRESENT_MASK,
+			.address = vmcs_readl(GUEST_LINEAR_ADDRESS),
+			.nested_page_fault = false,
+		};
 
+		vcpu->arch.mmu->inject_page_fault(vcpu, &fault);
+		
+		return 1;
 	}
 
 	return __vmx_handle_ept_violation(vcpu, gpa, exit_qualification);
